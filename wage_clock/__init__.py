@@ -1,0 +1,2 @@
+"""Salary clock desktop app."""
+
