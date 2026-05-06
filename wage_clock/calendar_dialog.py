@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from .holiday_calendar import HOLIDAY_SOURCE, day_label, is_official_workday
+from .ui_specs import COLORS
 
 
 class MonthCalendarDialog(tk.Toplevel):
@@ -35,8 +36,8 @@ class MonthCalendarDialog(tk.Toplevel):
 
         legend = ttk.Frame(wrapper)
         legend.pack(fill="x", pady=(12, 6))
-        ttk.Label(legend, text="红色：需要上班").pack(side="left")
-        ttk.Label(legend, text="  灰色：休息/法定假日").pack(side="left")
+        ttk.Label(legend, text="深色：需要上班").pack(side="left")
+        ttk.Label(legend, text="  浅色：休息/法定假日").pack(side="left")
 
         weekdays = ttk.Frame(wrapper)
         weekdays.pack(fill="x")
@@ -84,13 +85,13 @@ class MonthCalendarDialog(tk.Toplevel):
                 elif in_month:
                     restdays += 1
 
-                bg = "#fff5f3" if is_work else "#eeeeee"
-                fg = "#b42318" if is_work else "#6b7280"
+                bg = COLORS["work_day"] if is_work else COLORS["rest_day"]
+                fg = COLORS["ink"] if is_work else COLORS["muted"]
                 if not in_month:
-                    bg = "#f7f4ef"
-                    fg = "#c5c5c5"
+                    bg = COLORS["background"]
+                    fg = "#b8b8b2"
 
-                cell = tk.Frame(self.days_frame, bg=bg, highlightthickness=1, highlightbackground="#ddd6cc")
+                cell = tk.Frame(self.days_frame, bg=bg, highlightthickness=1, highlightbackground=COLORS["border"])
                 cell.grid(row=row, column=column, sticky="nsew", padx=2, pady=2)
                 tk.Label(cell, text=str(day.day), bg=bg, fg=fg, font=("Segoe UI", 13, "bold")).pack(
                     anchor="nw", padx=6, pady=(5, 0)

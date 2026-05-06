@@ -50,7 +50,7 @@ class SettingsDialog(tk.Toplevel):
 
         actions = ttk.Frame(frame)
         actions.pack(fill="x", pady=(18, 0))
-        ttk.Button(actions, text="保存并开始计价", command=self._save).pack(side="left")
+        ttk.Button(actions, text="保存开始", style="Primary.TButton", command=self._save).pack(side="left")
         ttk.Button(actions, text="查看当月日历", command=self.master.open_calendar).pack(side="left", padx=8)
         ttk.Button(actions, text="取消", command=self._cancel).pack(side="right")
 

@@ -9,14 +9,15 @@ from .models import Config
 from .settings_dialog import SettingsDialog, read_settings_values
 from .storage import HISTORY_PATH, HistoryStore, load_config, save_config
 from .theme import apply_theme
+from .ui_specs import ACTION_BUTTONS, COLORS, compact_status_text
 
 
 class SalaryClockApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("工资时钟")
-        self.geometry("390x420")
-        self.minsize(350, 390)
+        self.geometry("430x430")
+        self.minsize(410, 410)
 
         self.config_data = load_config()
         self.history = HistoryStore()
@@ -42,37 +43,94 @@ class SalaryClockApp(tk.Tk):
         self._tick()
 
     def _build_ui(self) -> None:
-        frame = ttk.Frame(self, padding=18)
+        frame = ttk.Frame(self, padding=14)
         frame.pack(fill="both", expand=True)
 
-        ttk.Label(frame, text="工资时钟", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(frame, text="工作日 08:30-18:00，午休 11:45-13:30 扣除").pack(anchor="w", pady=(4, 14))
+        topbar = ttk.Frame(frame)
+        topbar.pack(fill="x")
+        ttk.Label(topbar, text="工资时钟", style="Title.TLabel").pack(side="left")
+        ttk.Label(topbar, text="本地记录", style="Muted.TLabel").pack(side="right", pady=(5, 0))
 
-        ttk.Label(frame, text="今日已赚").pack(anchor="w")
-        ttk.Label(frame, textvariable=self.today_var, style="Money.TLabel").pack(anchor="w", pady=(0, 8))
+        hero = tk.Frame(frame, bg=COLORS["ink"], highlightthickness=0)
+        hero.pack(fill="x", pady=(12, 10))
+        hero.columnconfigure(0, weight=1)
+        tk.Label(
+            hero,
+            text="今日已赚",
+            bg=COLORS["ink"],
+            fg=COLORS["inverse_muted"],
+            font=("Microsoft YaHei UI", 9),
+        ).grid(row=0, column=0, sticky="w", padx=16, pady=(14, 0))
+        tk.Label(
+            hero,
+            textvariable=self.status_var,
+            bg=COLORS["ink"],
+            fg=COLORS["inverse_text"],
+            font=("Microsoft YaHei UI", 8),
+        ).grid(row=0, column=1, sticky="e", padx=16, pady=(14, 0))
+        tk.Label(
+            hero,
+            textvariable=self.today_var,
+            bg=COLORS["ink"],
+            fg=COLORS["inverse_text"],
+            font=("Segoe UI", 30, "bold"),
+        ).grid(row=1, column=0, columnspan=2, sticky="w", padx=16, pady=(4, 0))
+        tk.Label(
+            hero,
+            textvariable=self.baseline_var,
+            bg=COLORS["ink"],
+            fg=COLORS["inverse_muted"],
+            font=("Microsoft YaHei UI", 8),
+            anchor="w",
+        ).grid(row=2, column=0, columnspan=2, sticky="ew", padx=16, pady=(4, 14))
 
         grid = ttk.Frame(frame)
-        grid.pack(fill="x", pady=(4, 10))
+        grid.pack(fill="x", pady=(0, 10))
         grid.columnconfigure(0, weight=1)
         grid.columnconfigure(1, weight=1)
 
-        ttk.Label(grid, text="累计工资").grid(row=0, column=0, sticky="w")
-        ttk.Label(grid, text="当前速度").grid(row=0, column=1, sticky="w")
-        ttk.Label(grid, textvariable=self.month_var, style="SubMoney.TLabel").grid(row=1, column=0, sticky="w")
-        ttk.Label(grid, textvariable=self.rate_var, style="SubMoney.TLabel").grid(row=1, column=1, sticky="w")
+        total_card = self._create_card(grid)
+        total_card.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        speed_card = self._create_card(grid)
+        speed_card.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+        ttk.Label(total_card, text="累计工资", style="CardLabel.TLabel").pack(anchor="w", padx=10, pady=(9, 0))
+        ttk.Label(total_card, textvariable=self.month_var, style="SubMoney.TLabel").pack(anchor="w", padx=10, pady=(1, 9))
+        ttk.Label(speed_card, text="当前速度", style="CardLabel.TLabel").pack(anchor="w", padx=10, pady=(9, 0))
+        ttk.Label(speed_card, textvariable=self.rate_var, style="SubMoney.TLabel").pack(anchor="w", padx=10, pady=(1, 9))
 
-        self.progress = ttk.Progressbar(frame, mode="determinate", maximum=100)
-        self.progress.pack(fill="x", pady=(8, 4))
-        ttk.Label(frame, textvariable=self.progress_var).pack(anchor="w")
-        ttk.Label(frame, textvariable=self.status_var).pack(anchor="w", pady=(0, 10))
-        ttk.Label(frame, textvariable=self.baseline_var).pack(anchor="w", pady=(0, 12))
+        progress_card = self._create_card(frame)
+        progress_card.pack(fill="x", pady=(0, 10))
+        progress_header = ttk.Frame(progress_card, style="Surface.TFrame")
+        progress_header.pack(fill="x", padx=10, pady=(9, 7))
+        ttk.Label(progress_header, text="今日有效工时", style="CardLabel.TLabel").pack(side="left")
+        ttk.Label(progress_header, textvariable=self.progress_var, style="CardLabel.TLabel").pack(side="right")
+        self.progress = ttk.Progressbar(progress_card, mode="determinate", maximum=100)
+        self.progress.pack(fill="x", padx=10, pady=(0, 10))
 
         actions = ttk.Frame(frame)
-        actions.pack(fill="x", pady=(8, 0))
-        ttk.Button(actions, text="设置", command=self.open_settings).pack(side="left")
-        ttk.Button(actions, text="日历", command=self.open_calendar).pack(side="left", padx=(8, 0))
-        ttk.Button(actions, text="最小化", command=self.iconify).pack(side="left", padx=8)
-        ttk.Button(actions, text="查看记录", command=self.show_history).pack(side="right")
+        actions.pack(fill="x")
+        for column in range(4):
+            actions.columnconfigure(column, weight=1, uniform="actions")
+        commands = {
+            "settings": self.open_settings,
+            "calendar": self.open_calendar,
+            "hide": self.hide_to_tray,
+            "history": self.show_history,
+        }
+        for column, spec in enumerate(ACTION_BUTTONS):
+            style = "Primary.TButton" if spec.key == "settings" else "TButton"
+            ttk.Button(
+                actions,
+                text=f"{spec.icon} {spec.label}",
+                style=style,
+                command=commands[spec.key],
+            ).grid(row=0, column=column, sticky="ew", padx=(0 if column == 0 else 4, 0 if column == 3 else 4))
+
+    def _create_card(self, master):
+        return tk.Frame(master, bg=COLORS["surface"], highlightthickness=1, highlightbackground=COLORS["border"])
+
+    def hide_to_tray(self) -> None:
+        self.iconify()
 
     def open_initial_settings(self) -> None:
         SettingsDialog(self, "开始计价前先确认", self.save_settings, self.destroy)
@@ -128,6 +186,7 @@ class SalaryClockApp(tk.Tk):
 
         frame = ttk.Frame(win, padding=14)
         frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text="工资记录", style="Title.TLabel").pack(anchor="w", pady=(0, 10))
         columns = ("date", "earned", "time")
         tree = ttk.Treeview(frame, columns=columns, show="headings", height=12)
         tree.heading("date", text="日期")
@@ -176,7 +235,7 @@ class SalaryClockApp(tk.Tk):
             self.month_var.set("等待开始")
             self.rate_var.set("¥0.0000 / 秒")
             self.progress_var.set("00:00:00 / 07:45:00")
-            self.status_var.set("请先填写数据并点击“开始计价”")
+            self.status_var.set("待设置")
             self.baseline_var.set("")
             self.after(1000, self._tick)
             return
@@ -194,7 +253,7 @@ class SalaryClockApp(tk.Tk):
         self.month_var.set(fmt_money(tracked_total))
         self.rate_var.set(f"¥{rate:.4f} / 秒")
         self.progress_var.set(f"{fmt_duration(seconds)} / {fmt_duration(scheduled)}")
-        self.status_var.set(status_for(now))
+        self.status_var.set(compact_status_text(status_for(now)))
         self.baseline_var.set(
             f"起点：已上班 {self.config_data.base_workdays:g} 天，"
             f"起始累计 {fmt_money(self.config_data.base_total_earned)}"
