@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from .holiday_calendar import HOLIDAY_SOURCE, day_label, is_official_workday
+from .ui_specs import COLORS
 
 
 class MonthCalendarDialog(tk.Toplevel):
@@ -13,8 +14,8 @@ class MonthCalendarDialog(tk.Toplevel):
         self.year = today.year
         self.month = today.month
         self.title("当月日历")
-        self.geometry("430x450")
-        self.minsize(390, 420)
+        self.geometry("560x540")
+        self.minsize(520, 500)
         self.transient(master)
 
         self.title_var = tk.StringVar()
@@ -24,7 +25,7 @@ class MonthCalendarDialog(tk.Toplevel):
         self._render_month()
 
     def _build(self) -> None:
-        wrapper = ttk.Frame(self, padding=16)
+        wrapper = ttk.Frame(self, padding=12)
         wrapper.pack(fill="both", expand=True)
 
         header = ttk.Frame(wrapper)
@@ -35,8 +36,8 @@ class MonthCalendarDialog(tk.Toplevel):
 
         legend = ttk.Frame(wrapper)
         legend.pack(fill="x", pady=(12, 6))
-        ttk.Label(legend, text="红色：需要上班").pack(side="left")
-        ttk.Label(legend, text="  灰色：休息/法定假日").pack(side="left")
+        ttk.Label(legend, text="深色：需要上班").pack(side="left")
+        ttk.Label(legend, text="  浅色：休息/法定假日").pack(side="left")
 
         weekdays = ttk.Frame(wrapper)
         weekdays.pack(fill="x")
@@ -74,9 +75,9 @@ class MonthCalendarDialog(tk.Toplevel):
         restdays = 0
 
         for row, week in enumerate(weeks):
-            self.days_frame.rowconfigure(row, weight=1)
+            self.days_frame.rowconfigure(row, weight=1, minsize=64)
             for column, day in enumerate(week):
-                self.days_frame.columnconfigure(column, weight=1)
+                self.days_frame.columnconfigure(column, weight=1, minsize=72, uniform="calendar_day")
                 in_month = day.month == self.month
                 is_work = in_month and is_official_workday(day)
                 if in_month and is_work:
@@ -84,21 +85,28 @@ class MonthCalendarDialog(tk.Toplevel):
                 elif in_month:
                     restdays += 1
 
-                bg = "#fff5f3" if is_work else "#eeeeee"
-                fg = "#b42318" if is_work else "#6b7280"
+                bg = COLORS["work_day"] if is_work else COLORS["rest_day"]
+                fg = COLORS["ink"] if is_work else COLORS["muted"]
                 if not in_month:
-                    bg = "#f7f4ef"
-                    fg = "#c5c5c5"
+                    bg = COLORS["background"]
+                    fg = "#b8b8b2"
 
-                cell = tk.Frame(self.days_frame, bg=bg, highlightthickness=1, highlightbackground="#ddd6cc")
+                cell = tk.Frame(self.days_frame, bg=bg, highlightthickness=1, highlightbackground=COLORS["border"])
                 cell.grid(row=row, column=column, sticky="nsew", padx=2, pady=2)
-                tk.Label(cell, text=str(day.day), bg=bg, fg=fg, font=("Segoe UI", 13, "bold")).pack(
-                    anchor="nw", padx=6, pady=(5, 0)
+                tk.Label(cell, text=str(day.day), bg=bg, fg=fg, font=("Segoe UI", 12, "bold")).pack(
+                    anchor="nw", padx=5, pady=(4, 0)
                 )
                 label = day_label(day) if in_month else ""
-                tk.Label(cell, text=label, bg=bg, fg=fg, font=("Microsoft YaHei UI", 8)).pack(
-                    anchor="nw", padx=6, pady=(0, 5)
+                tk.Label(
+                    cell,
+                    text=label,
+                    bg=bg,
+                    fg=fg,
+                    font=("Microsoft YaHei UI", 7),
+                    justify="left",
+                    wraplength=68,
+                ).pack(
+                    anchor="nw", padx=5, pady=(0, 4)
                 )
 
         self.summary_var.set(f"本月需要上班 {workdays} 天，休息 {restdays} 天")
-

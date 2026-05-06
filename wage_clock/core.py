@@ -48,6 +48,20 @@ def working_days_in_month(year: int, month: int) -> int:
     return sum(1 for number in range(1, days + 1) if is_workday(date(year, month, number)))
 
 
+def elapsed_workdays_after(start_day: date, today: date) -> int:
+    if today <= start_day:
+        return 0
+
+    total = 0
+    cursor = start_day.toordinal() + 1
+    end = today.toordinal()
+    while cursor <= end:
+        if is_workday(date.fromordinal(cursor)):
+            total += 1
+        cursor += 1
+    return total
+
+
 def daily_pay(config: Config, day: date) -> float:
     if config.pay_mode == "monthly":
         workdays = working_days_in_month(day.year, day.month)

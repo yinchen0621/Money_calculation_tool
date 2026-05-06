@@ -9,7 +9,7 @@ class SettingsDialog(tk.Toplevel):
         self.on_save = on_save
         self.on_cancel = on_cancel
         self.title(title)
-        self.geometry("360x330")
+        self.geometry("400x330")
         self.resizable(False, False)
         self.transient(master)
         self.grab_set()
@@ -50,9 +50,13 @@ class SettingsDialog(tk.Toplevel):
 
         actions = ttk.Frame(frame)
         actions.pack(fill="x", pady=(18, 0))
-        ttk.Button(actions, text="保存并开始计价", command=self._save).pack(side="left")
-        ttk.Button(actions, text="查看当月日历", command=self.master.open_calendar).pack(side="left", padx=8)
-        ttk.Button(actions, text="取消", command=self._cancel).pack(side="right")
+        for column in range(3):
+            actions.columnconfigure(column, weight=1, uniform="settings_actions")
+        ttk.Button(actions, text="保存开始", style="Primary.TButton", command=self._save).grid(
+            row=0, column=0, sticky="ew", padx=(0, 4)
+        )
+        ttk.Button(actions, text="当月日历", command=self.master.open_calendar).grid(row=0, column=1, sticky="ew", padx=4)
+        ttk.Button(actions, text="取消", command=self._cancel).grid(row=0, column=2, sticky="ew", padx=(4, 0))
 
     def _save(self) -> None:
         ok = self.on_save()
